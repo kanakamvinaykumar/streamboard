@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="{{language}}">
+
+<head>
+		<meta charset="utf-8" />
+	<meta name='viewport' content='width=device-width, user-scalable=no'/>
+	<title>{{board}} | Stream Board | {{translations.collaborative_whiteboard}}</title>
+	<!-- <meta name="viewport" content="width=device-width, initial-scale=1" /> -->
+	<link rel="stylesheet" type="text/css" href="../board.css" />
+	<script src="../socket.io/socket.io.js"></script>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+	<meta name="description" content="online collaborative tool." />
+	<meta name="keywords"
+		content="{{translations.collaborative_whiteboard}},online,draw,paint,shared,realtime" />
+	<link rel="apple-touch-icon" href="../favicon.svg">
+	<link rel="icon" type="image/x-icon" sizes="16x16" href="../favicon.ico">
+	<!-- <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0" /> -->
+	
+	<script src="../polyfill.min.js"></script>
+	<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+  <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.js"></script>
+	<script type="text/javascript" src="https://cdn.ckeditor.com/ckeditor5/28.0.0/classic/ckeditor.js"></script>
+	<script type='text/javascript' src='https://ircdname.azureedge.net/immersivereadersdk/immersive-reader-sdk.1.2.0.js'></script>
+<style type="text/css">
+
+
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 80px; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 92%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 0px 25px;
+  border: 1px solid #888;
+  width: 85%;
+  height: 85%;
+}
+.checked{
+	border: 5px solid;
+
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+.unselected {
+	display: hidden;
+}
+.selected {
+	display: none;
+}
+#my_cursor {
+    position: fixed;
+    /*background: black;*/
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+}
+.overlay{
+        display: none;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: 999;
+        background: rgba(255,255,255,0.8) url("https://i0.wp.com/static.helpjuice.com/helpjuice_production/uploads/upload/image/6076/497049/loader.gif") center no-repeat;
+    }
+    body{
+        text-align: center;
+    }
+    /* Turn off scrollbar when body element has the loading class */
+    body.loading{
+        overflow: hidden;   
+    }
+    /* Make spinner image visible when body element has the loading class */
+    body.loading .overlay{
+        display: block;
+    }
+</style>
+ <script type="text/javascript">
+$(document).on({
+    ajaxStart: function(){
+        $("body").addClass("loading"); 
+    },
+    ajaxStop: function(){ 
+        $("body").removeClass("loading"); 
+    }    
+});
+ 
+ function fun(){
+   document.getElementById("calcreset").reset();
+ } 
+</script>
+	<script>
+
+  $( function() {
+    $("#draggable" ).draggable();
+    $("#draggable5").draggable();
+    $("#left-menu").draggable();
+    $("#bottom-menu").draggable();
+
+		window.app_url = "http://65.108.95.12:3000";
+		window.pdfToImage = "http://65.108.95.12:1275/";
+		window.notification_url = "http://65.108.95.12:9001/api/notificaitons";
+		window.randomUser = (Math.random() + 1).toString(36).substring(7);	
+
+  });
+
+  function immersiveReader() {
+  	// var data = document.getElementById('textToolInput');
+           const data = {
+                title: "Stream Board",
+                chunks: [{
+                    content: $('#textToolInput').val(),
+                    lang: 'en'
+                }]
+            };
+            console.log(data)
+            // Refer to the launchImmersiveReader() function in helpers.js for more information. It covers how to retrieve
+            // the Cognitive Services token, the subdomain, and usage of the launchAsync function of the Immersive Reader SDK
+            launchImmersiveReader(data);
+}
+  </script>
+	  <script>
+  $(document).ready(
+    function() {
+        $("#calc").click(function() {
+            $("#draggable").toggle();
+        });
+    });
+	</script>
+	 <script>
+  $(document).ready(
+    function() {
+        $("#timeer").click(function() {
+            $("#draggable5").toggle();
+        });
+    });
+	</script>
+		<script>
+	function calcNumbers(result){
+		form.displayResult.value=form.displayResult.value+result;
+		
+	}
+	</script>
+<!-- 	<script>
+		$(window).on("load", function() {
+			init();
+		});
+		$(document).ready(function(){
+  			$('[data-toggle="tooltip"]').tooltip();   
+		});
+		document.addEventListener('touchmove', function (event) {
+  			if (event.scale !== 1) { event.preventDefault(); }
+		}, {passive: false} );
+	</script> -->
+</head>
+<body>
+
+	<div id="notification" aria-live="polite" aria-atomic="true" style="position: fixed;z-index: 99;top: 80px;width: 100%;">
+  <div class="toast">
+    <div class="toast-header">
+      <strong class="mr-auto" id="notification_title">Title</strong>
+<!--       <small>11 mins ago</small> -->
+      <button class="ml-2 mb-1" style="color:#aaaaaa;float: right;font-size:17px;font-weight: bold;border-radius: 10px;" onclick="closeNotification()">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    <div class="toast-body" id="notification_desc">Notification Description
+    </div>
+  </div>
+</div>
+<div id="header">
+      <span class="image-clickable">
+        <a href="javascript:void(0)">
+          <img src="tools/svg/logo-SB.svg" alt="main-logo" class="logo" />
+        </a>
+      </span>
+      <nav>
+        <ul class="nav-links">
+          <!-- <li><a href="javascript:void(0)" style="font-size: 18px;font-family: verdana;">Group Main</a></li> -->
+          <li><a href="javascript:void(0)">Annotating by : <span style="color: blue;font-weight: bold;font-size: 20px;" id="attend"> - </span><span class="atndnc">| Attendance (22/25)</span></a></li>
+          <li><a href="javascript:void(0)"onclick="generateQRCode()"><span id="qr" style="margin-right: 10px;font-size: 18px;font-family: verdana;"></span><img src="tools/svg/qr.svg"/></a></li>
+          <li><a href="javascript:void(0)"><span id="username" style="margin-right: 10px;font-size: 18px;font-family: verdana;"></span><img src="tools/svg/user-1.svg"/></a></li>
+           <li><a href="javascript:void(0)"><img src="tools/svg/notifications.svg"/ class="hd_icn"></a></li>
+           <li><a href="javascript:void(0)"><img src="tools/svg/settings.svg"/ class="hd_icn"></a></li>
+           <li style="margin-right:25px;"><a href="/"><img src="tools/svg/sign-out-alt.svg"/ class="hd_icn"></a></li>
+           <!-- <li><a href="javascript:void(0)"><img src="images/svg/question.svg"/ class="hd_icn"></a> </li> -->
+        </ul>
+      </nav>
+ </div>
+   
+<div class="lft_mnu">
+
+ <ul class="menu-area" id="left-menu">
+		
+			<li onclick="openCloseObject()" id="obj_active"><a href="javascript:void(0)"><img src="tools/svg/objects.svg"/></a>
+	
+								<ul class="sublist" id="object_tools">
+									   <div class="trimg">
+										  <li class="tool " tabindex="-1" id="bgBtn2">
+											 <a href="javascript:void(0)" id="timeer"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/countdown timer.svg" alt="timer">
+											 <span class="tool-name"></span>
+											 </a>
+										  </li>
+										  <li class="tool " tabindex="-1" onclick="changeTool('circle',event, 'Ellipse', true)">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Ellipse.svg" alt="Circle">
+											 <span class="tool-name"></span></a>
+										  </li>
+										  <li class="tool " tabindex="-1" onclick="changeTool('square',event, 'Rectangle', true)">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/square.svg" alt="Square">
+											 <span class="tool-name"></span></a>
+										  </li>
+										  <li class="tool " tabindex="-1" onclick="changeTool('rectangle', event, 'Rectangle')">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Rectangle.svg" alt="Rectangle">
+											 <span class="tool-name"></span></a>
+										  </li>
+									   </div>
+									   
+									   
+									   <div class="trimg">
+									   
+									      <li class="tool " tabindex="-1" onclick="changeTool('ellipse_fill',event, 'Ellipse')">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/elipsisfill.svg" alt="Ellipse">
+											 <span class="tool-name"></span></a>
+										  </li>
+									   
+									   <li class="tool " tabindex="-1" onclick="changeTool('circle_fill',event, 'Ellipse', true)">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/circlefill.svg" alt="Circle">
+											 <span class="tool-name"></span></a>
+										  </li>
+										  <li class="tool " tabindex="-1" onclick="changeTool('square_fill',event, 'Rectangle', true)">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/squarefill.svg" alt="Square">
+											 <span class="tool-name"></span></a>
+										  </li>
+										  <li class="tool " tabindex="-1" onclick="changeTool('rectangle_fill', event, 'Rectangle')">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/rectanglefill.svg" alt="Rectangle">
+											 <span class="tool-name"></span></a>
+										  </li>
+									   
+									
+									   
+									   </div>
+									   
+									   
+									   
+									   <div class="trimg">
+										  <li class="tool " tabindex="-1" id="" onclick="changeTool('circle_fill',event, 'Ellipse', true)">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Triangle.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+										  <li class="tool " tabindex="-1" id="" onclick="comingSoon()">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Polygon 4.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+										  <li class="tool " tabindex="-1" id="" onclick="comingSoon()">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Polygon 5.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+										  <li class="tool " tabindex="-1" id="" onclick="comingSoon()">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Polygon 6.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+									   </div>
+									   <div class="trimg">
+										  <li class="tool " tabindex="-1" id="toolID-Straight line" onclick="changeTool('line', event, 'Straight line')">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/line.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+										  <li class="tool " tabindex="-1" id="" onclick="comingSoon()">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Connecting line.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+										  <li class="tool " tabindex="-1" id="" onclick="comingSoon()">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Doted Line.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+										  <li class="tool " tabindex="-1" id="" onclick="comingSoon()">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/thickline.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+									   </div>
+									   <div class="trimg">
+										  <li class="tool " tabindex="-1" id="" onclick="comingSoon()">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/4box.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+										  <li class="tool " tabindex="-1" onclick="changeTool('ellipse',event, 'Ellipse')">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/oval.svg" alt="Ellipse">
+											 <span class="tool-name"></span></a>
+										  </li>
+										  <li class="tool " tabindex="-1" id="" onclick="comingSoon()">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Triangle left.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+										  <li class="tool " tabindex="-1" id="" onclick="comingSoon()">
+											 <a href="javascript:void(0)"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/Trianle right.svg" alt="Line">
+											 <span class="tool-name"></span></a>	
+										  </li>
+									   </div>
+									   <div class="trimg">
+										  <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/animal.svg"/></a></li>
+										  <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/animal-2.svg" /></a></li>
+										  <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/animal-3.svg" /></a> </li>
+										  <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/animal-4.svg" /></a> </li>
+									   </div>
+								</ul>
+				  
+			</li>
+
+				<li onclick="openCloseMath()" id="math_active"><a href="javascript:void(0)"><img src="tools/svg/subject-books.svg"/></a>
+ 
+				   <ul class="sublist" id="math_tools">
+							
+							<li onclick="openCloseMathObj()"><a href="javascript:void(0)"><img src="tools/svg/maths.svg" />Maths</a>
+								<ul class="sublist_sub" id="math_obj_tools" style="display:none">
+								  <li onclick="renderImage('tools/images/protractor.svg')"><a href="javascript:void(0)"><img src="tools/svg/protactor.svg" />Protractor</a></li>
+								  <li onclick="renderImage('tools/images/setsquare.svg')"><a href="javascript:void(0)"><img src="tools/svg/set square.svg" />Set Square</a></li>
+								  <li onclick="renderImage('tools/images/scale.svg')"><a href="javascript:void(0)"><img src="tools/svg/rular.svg" />Rular</a> </li>
+								  <li><a href="javascript:void(0)" id="calc"><img src="tools/svg/Calculator.svg" />Calculator</a> </li>
+								  <li><a href="javascript:void(0)"><img src="tools/svg/compass.svg" />Compass</a> </li>
+								  
+							  </ul>
+							</li>
+							<li onclick="openClosePhyObj()"><a href="javascript:void(0)"><img src="tools/svg/physics-1.svg" />Physics</a>
+									<ul class="sublist_sub" id="phy_obj_tools" style="display:none">
+								  <li onclick="renderImage('tools/images/flask.svg')"><a href="javascript:void(0)"><img src="tools/svg/Flasks.svg" />Flask</a></li>
+								  <li onclick="renderImage('tools/images/jar.svg')"><a href="javascript:void(0)"><img src="tools/svg/jars.svg" />Jar</a></li>
+								  <li onclick="renderImage('tools/images/testtube.svg')"><a href="javascript:void(0)"><img src="tools/svg/testtube.svg" />Test Tubes</a> </li>
+								  <li onclick="renderImage('tools/images/microscope.svg')"><a href="javascript:void(0)"><img src="tools/svg/microscope.svg" />Microscope</a> </li>
+								  
+								  
+							  </ul>
+							</li>
+							<li onclick="openCloseCheObj()"><a href="javascript:void(0)"><img src="tools/svg/chemistry.svg" />Chemistry</a>
+							<ul class="sublist_sub" id="che_obj_tools" style="display:none">
+								  <li onclick="renderImage('tools/images/tablenew.jpg')"><a href="javascript:void(0)"><img src="tools/svg/Perodic table.svg" />Periodic Table</a></li>
+								  <li onclick="renderImage('tools/images/atom.svg')"><a href="javascript:void(0)"><img src="tools/svg/atom.svg" />Atom</a></li>
+								  
+								  
+							  </ul>
+							</li>
+							<li onclick="openCloseBioObj()"><a href="javascript:void(0)"><img src="tools/svg/biology.svg" />Biology</a>
+							<ul class="sublist_sub" id="bio_obj_tools" style="display:none">
+								  <li onclick="renderImage('tools/images/cells.svg')"><a href="javascript:void(0)"><img src="tools/svg/cells.svg" />Cells</a></li>
+								  <li onclick="renderImage('tools/images/molecular-blk.svg')"><a href="javascript:void(0)"><img src="tools/svg/molecular.svg" />Molecular</a></li>
+								  <li onclick="renderImage('tools/images/humanbody2.svg')"><a href="javascript:void(0)"><img src="tools/svg/human body.svg" />Human Body</a> </li>
+								  <li onclick="renderImage('tools/images/ecology.svg')"><a href="javascript:void(0)"><img src="tools/svg/ecology.svg" />Ecology</a> </li>
+								  <!-- <li onclick="renderImage('tools/images/scale.svg')"><a href="javascript:void(0)"><img src="tools/svg/animal.svg" />Animals</a> </li> -->
+								  <li onclick="renderImage('tools/images/plant2.svg')"><a href="javascript:void(0)"><img src="tools/svg/plants.svg" />Plants</a> </li>
+								  
+								  
+							  </ul>
+							</li>
+							
+							<li id="phet"><a href="javascript:void(0)" id="myBtn"><img src="tools/svg/phet.svg" style="width:40px;"/>Simulation</a></li>
+						
+						</ul>
+				   
+					</li>
+				   
+					   <li class="tool  curTool" id="hand_tool" onclick="changeTool('hand',event, 'Hand')">
+							<a href="javascript:void(0)">
+							<span class="tool-name"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/hand.svg" alt="Move"></span></a>
+							
+						</li>
+					
+						<li class="tool " tabindex="-1" onclick="changeTool('selector',event, 'Hand', true);window.is_delete = false;">
+							<a href="javascript:void(0)">
+							<span class="tool-name"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/select.svg" alt="Select"></span></a>
+						</li>
+<!-- 						<li class="tool " tabindex="-1" onclick="changeTool('transform',event, 'Transform',true)">
+							<a href="javascript:void(0)">
+							<span class="tool-name">
+<img draggable="false" src="data:image/svg+xml;utf8,<svg id=&quot;_x31__x2C_5&quot; enable-background=&quot;new 0 0 24 24&quot; height=&quot;24&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;24&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><g><path d=&quot;m5.25 6h-4.5c-.414 0-.75-.336-.75-.75v-4.5c0-.414.336-.75.75-.75h4.5c.414 0 .75.336.75.75v4.5c0 .414-.336.75-.75.75zm-3.75-1.5h3v-3h-3z&quot;/></g><g><path d=&quot;m23.25 6h-4.5c-.414 0-.75-.336-.75-.75v-4.5c0-.414.336-.75.75-.75h4.5c.414 0 .75.336.75.75v4.5c0 .414-.336.75-.75.75zm-3.75-1.5h3v-3h-3z&quot;/></g><g><path d=&quot;m5.25 24h-4.5c-.414 0-.75-.336-.75-.75v-4.5c0-.414.336-.75.75-.75h4.5c.414 0 .75.336.75.75v4.5c0 .414-.336.75-.75.75zm-3.75-1.5h3v-3h-3z&quot;/></g><g><path d=&quot;m23.25 24h-4.5c-.414 0-.75-.336-.75-.75v-4.5c0-.414.336-.75.75-.75h4.5c.414 0 .75.336.75.75v4.5c0 .414-.336.75-.75.75zm-3.75-1.5h3v-3h-3z&quot;/></g><g><path d=&quot;m21.25 19.5c-.414 0-.75-.336-.75-.75v-13.5c0-.414.336-.75.75-.75s.75.336.75.75v13.5c0 .414-.336.75-.75.75z&quot;/></g><g><path d=&quot;m2.75 19.5c-.414 0-.75-.336-.75-.75v-13.5c0-.414.336-.75.75-.75s.75.336.75.75v13.5c0 .414-.336.75-.75.75z&quot;/></g><g><path d=&quot;m18.75 22h-13.5c-.414 0-.75-.336-.75-.75s.336-.75.75-.75h13.5c.414 0 .75.336.75.75s-.336.75-.75.75z&quot;/></g><g><path d=&quot;m18.75 3.5h-13.5c-.414 0-.75-.336-.75-.75s.336-.75.75-.75h13.5c.414 0 .75.336.75.75s-.336.75-.75.75z&quot;/></g></svg>">
+</span></a>
+						</li> -->
+					   <li id="upload_active" onclick="openCloseUpload()"><a href="javascript:void(0)"><img src="tools/svg/upload-1.svg"/></a>
+							<ul class="sublist" id="upload_tools">
+								
+								<li onclick="changeTool('document',event, 'Document', true)"><a href="javascript:void(0)"><img src="tools/svg/pc.svg" />Local PC</a></li>
+								<li onclick="comingSoon()" id="gdrive"><a href="javascript:void(0)"><img src="tools/svg/drive.svg" /> Google Drive</a></li>
+								<li onclick="launchOneDrivePicker()" id="onedrive"><a href="javascript:void(0)"><img src="tools/svg/onedrive.svg" /> OneDrive</a></li>
+						   </ul>
+					   </li>
+				   
+					   <li onclick="openCloseDownload()" id="download_active"><a href="javascript:void(0)"><img src="tools/svg/save.svg"/></a>
+							<ul class="sublist" id="download_tools">
+							<li onclick="newBoard()" id="dialog-box"><a href="javascript:void(0)"><img src="tools/svg/pc.svg" />New</a></li>
+								<li class="tool oneTouch" tabindex="-1" onclick="changeTool('download',event, 'Download')">
+									<a href=""><img class="tool-icon" width="35" height="35" src="tools/svg/download.svg" alt="Download">
+									<span class="tool-name">Download</span></a>
+								</li>
+								<li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/export.svg" />Export</a></li>
+								<li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/save as.svg" />Save as</a></li>
+						   </ul>
+					   </li>
+					   
+					   <li onclick="changeTool('undo',event, 'Undo')"><a href="javascript:void(0)"><img src="tools/svg/undo.svg"/></a></li>
+					   <li onclick="changeTool('redo',event, 'Redo')"><a href="javascript:void(0)"><img src="tools/svg/undo-1.svg"/></a></li>
+					   <li><a href="javascript:void(0)"><img src="tools/svg/move.svg"/></a></li>
+	</ul>
+
+</div>
+	<!-- <div id="sidebar-right"> -->
+				
+				   <!-- <ul class="menu-area" id ="menu-right"> -->
+				   <!-- <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/group.svg"/></a></li> -->
+				   <!-- <li onclick="handwriting.recognize(trace, options, callback);"><a href="javascript:void(0)"><img src="tools/svg/mike.svg"/></a></li> -->
+				   <!-- <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/video.svg"/></a></li> -->
+				   <!-- <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/chat-1.svg"/></a></li> -->
+				   <!-- <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/screen share.svg"/></a></li> -->
+				   <!-- <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/record.svg"/></a></li> -->
+				   <!-- <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/link.svg"/></a></li> -->
+				   <!-- <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/more.svg"/></a></li> -->
+				   <!-- </ul> -->
+	
+	<!-- </div> -->
+	
+	<div id="myModal" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <iframe  style="height:85%;width: 100%;" src= "https://phet.colorado.edu/sims/html/circuit-construction-kit-ac/latest/circuit-construction-kit-ac_en.html"  scrolling="no" allowfullscreen>
+</iframe>
+  </div>
+
+</div>
+
+
+
+	<div style='display:none' id="msr-pod-up"><i class="fas fa-angle-double-up"></i></div>
+	<div style='display:none' id="msr-dialog" class="msr-dialog">
+		<div id="msr-pod"><span id="msr-header">Geometry</span><i style="float:right;color:gray;margin:5px 10px 0px 0px" class="fas fa-angle-double-down"></i></div>
+		<div id="msr-main"><br>Ready</div>
+	</div>
+	<div id="shape-lock" class="shape-lock">
+		<i id="shape-lock-icon" class="fas fa-unlock"></i>
+	</div>
+	<!-- <div class="board_point" id="mypoint"></div> -->
+			<div id="board" class="board_point" >
+		<!-- <canvas id="pdf-canvas" width="400"></canvas> -->
+				<svg id="canvas" width="1300" height="600" version="1.1" xmlns="http://www.w3.org/2000/svg">
+					<defs id="defs">
+					  <path id="path1" d="M10,30 H190 M10,60 H190 M10,90 H190 M10,120 H190"></path>
+					</defs>
+<!-- 					<rect onmousedown="mouser.unregisterShapes()" style="display:block" id="rect_1" width="100%" height="100%" fill="url(#grid)" /> -->
+					<g id="drawingArea"></g>
+					<g id="cursors"></g>
+				</svg>
+			</div>
+
+		<!-- <div id="loadingMessage">{{translations.loading}}</div> -->
+
+		<div id="menu" tabindex="0" style={{#hideMenu}}style="display:none;"{{/hideMenu}}>
+			<div id="menuItems">
+			
+			<ul id="tools" class="tools">
+				 <li class="tool " tabindex="-1" id="toolID-Pencil">
+					<img class="tool-icon primaryIcon" width="35" height="35" src="tools/pencil/icon.svg" alt="tools/pencil/icon.svg">
+					<span class="tool-name">Pencil</span>
+					<img class="tool-icon secondaryIcon" width="35" height="35" src="tools/pencil/whiteout_tape.svg" alt="icon">
+				 </li>
+								
+					<!-- <li class="tool " tabindex="-1" onclick="changeTool('White-out',event, 'Pencil', true)"> -->
+					<!-- <img class="tool-icon primaryIcon" width="35" height="35" src="tools/pencil/whiteout_tape.svg" alt="tools/pencil/icon.svg"> -->
+					<!-- <span class="tool-name">White-out</span> -->
+					<!-- <img class="tool-icon secondaryIcon" width="35" height="35" src="https://wbo.ophir.dev/boards/tools/pencil/icon.svg" alt="icon"> -->
+					<!-- </li> -->
+					
+					<!-- <li class="tool " tabindex="-1" id="toolID-Straight line" onclick="changeTool('stright', event, 'Straight line', true)"> -->
+					<!-- <img class="tool-icon primaryIcon" width="35" height="35" src="tools/line/icon-straight.svg" alt="tools/line/icon.svg"> -->
+					<!-- <span class="tool-name">Straight line</span> -->
+					<!-- <img class="tool-icon secondaryIcon" width="35" height="35" src="https://wbo.ophir.dev/boards/tools/line/icon.svg" alt="icon"> -->
+					<!-- </li> -->
+					
+					<!-- <li class="tool" tabindex="-1" onclick="changeTool('zoom',event, 'Zoom')"> -->
+						<!-- <img class="tool-icon" width="35" height="35" src="tools/zoom/icon.svg" alt="tools/zoom/icon.svg"> -->
+						<!-- <span class="tool-name">Zoom</span> -->
+						<!-- <img class="tool-icon secondaryIcon" width="35" height="35" src="data:," alt="icon"> -->
+					<!-- </li> -->
+			</ul>		
+		<div class="footernav">
+		
+			    <ul class="nav" style="background-color:white" id="bottom-menu">
+							<li onclick="openCloseMarker(event)" id="pen_active">
+							   <img src="tools/svg/pen-2.svg"/>
+							 <ul id="marker_tools" style="width:135px;">
+								<span style="display:flex;">
+									  <li class="tool  curTool" tabindex="-1" style="position:relative;left:18px;"><a href="javascript:void(0)"><span class="tool-name" onclick="changeTool('pencil', event, 'Pencil')"><img src="tools/svg/pen-2.svg"/> </span></a></li>
+									  
+									   <li><a href="javascript:void(0)"><span class="tool-name" onclick="changeTool('highliter', event, 'Pencil')"><img src="tools/svg/highlighter.svg"/> </span></a></li>
+									   </span>
+									   
+									  <li>
+										  <label class="tool-name slider" for="chooseSize"><input type="range" id="chooseSize" value="4" min="4" max="100" step="1" class="rangeChooser"></label>
+									  </li>
+
+<!-- 									  <li>
+										  <label class="tool-name slider" for="chooseSize"><input type="range" id="chooseOpacitySize" value="40" min="1" max="100" step="1" class="rangeChooser"></label>
+									  </li> -->
+									 
+
+									  <li id="magic"><a href="javascript:void(0)" id="bgBtn6"><img src="tools/svg/magicdraw.svg" />Magic Draw</a></li>
+							   </ul>
+							</li>
+							<li onclick="openCloseColor()" class="tool" id="color_active">
+								<img src="tools/svg/color.svg" />
+								<ul id="color_tools" style="width:290px;">
+							  
+							  <span class="colorPresets" id="colorPresetSel" style="position:relative;width:305px !important;
+    height: 30px;
+    display: flex;
+    left: -30px;">
+									
+							   <li style="border-radius: 5px;margin-right:5px !important;"><span onclick="chooseColor('#000000')"  class="colorPresetButton" id="color_000000" style="border: 16px solid #000000;"></span></li>
+							   <li style="border-radius: 5px;margin-right:5px !important;"><span onclick="chooseColor('#FF851B')"  class="colorPresetButton" id="color_FF851B" style="border: 16px solid rgb(255, 133, 27);"></span></li>
+							   <li style="border-radius: 5px;margin-right:5px !important;"><span onclick="chooseColor('#FFDC00')"  class="colorPresetButton" id="color_FFDC00" style="border: 16px solid rgb(255, 220, 0);"></span></li>
+							   <li style="border-radius: 5px;margin-right:5px !important;"><span onclick="chooseColor('#3D9970')"  class="colorPresetButton" id="color_3D9970" style="border: 16px solid rgb(61, 153, 112);"></span></li>
+							   <li style="border-radius: 5px;margin-right:5px !important;"><span onclick="chooseColor('#91E99B')"  class="colorPresetButton" id="color_91E99B" style="border: 16px solid rgb(145, 233, 155);"></span></li>
+							   <li style="border-radius: 5px;margin-right:5px !important;"><span onclick="chooseColor('#90468b')"  class="colorPresetButton" id="color_90468b" style="border: 16px solid rgb(144, 70, 139);"></span></li>
+							   <li style="border-radius: 5px;margin-right:5px !important;"><span onclick="chooseColor('#7FDBFF')"  class="colorPresetButton" id="color_7FDBFF" style="border: 16px solid rgb(127, 219, 255);"></span></li>
+							   <li style="border-radius: 5px;margin-right:5px !important;"><span onclick="chooseColor('#AAAAAA')"  class="colorPresetButton" id="color_AAAAAA" style="border: 16px solid rgb(170, 170, 170);"></span></li>
+							   <li><input class="tool-icon colorpre" type="color" id="chooseColor" value="Select More"/></li>
+							   </span>
+								</ul>
+								
+								</li>
+							<li onclick="openCloseDelete(event)" id="delete_active">
+							   <img src="tools/svg/eraser.svg" />
+							   <ul class="txt_sbl" id="delete_tool" style="display:flex;">
+								  <li class="tool" tabindex="-1" onclick="changeTool('deleteall',event, 'New')">
+									 <a href="javascript:void(0)"><img class="tool-icon" width="35" height="35" src="tools/svg/deleteall.svg" alt="Delete">
+									 <span class="tool-name"></span></a>
+								  </li>
+								  <li class="tool" tabindex="-1" onclick="changeTool('eraser',event, 'Eraser')">
+									 <a href="javascript:void(0)"><img class="tool-icon" width="35" height="35" src="tools/svg/erase.svg" alt="Delete">
+									 <span class="tool-name"></span></a>
+								  </li>
+								  <li class="tool" tabindex="-1" onclick="changeTool('White-out', event, 'Pencil', true)"><a href="javascript:void(0)"><span class="tool-name"><img class="tool-icon primaryIcon" src="tools/svg/Eraser5.png" style="width: 25px;
+    position: relative;
+    top: 4px;" /></span></a></li>
+
+    								  <li class="tool" tabindex="-1" onclick="changeTool('palmEraser', event, 'Pencil', true)"><a href="javascript:void(0)"><span class="tool-name"><img class="tool-icon primaryIcon" src="tools/svg/hand.svg" style="width: 25px;
+    position: relative;
+    top: 4px;" /></span></a></li>
+								  
+								  <li class="tool " tabindex="-1" onclick="changeTool('selector',event, 'Hand', true);window.is_delete = true;">
+									 <a href="javascript:void(0)">
+									 <span class="tool-name"><img class="tool-icon primaryIcon" width="35" height="35" src="tools/svg/lasso.svg" alt="Laso"></span></a>
+								  </li>
+							   </ul>
+							</li>
+							<li onclick="openCloseText(event)" id="text_active">
+							   <img src="tools/svg/text-1.svg"/>
+							   <ul class="txt_sbl" id="text_tool" style="display:flex;">
+								  <li onclick="comingSoon()">
+									 <a href="javascript:void(0)"><img src="tools/svg/notepad.svg" /></a>
+								  </li>
+								  <li id="handwriting"><a id="bgBtn7" href="javascript:void(0)"><img src="tools/svg/hand write.svg" /></a></li>
+								  <li class="tool" tabindex="-1" onclick="changeTool('text',event, 'Text')">
+									 <a href="javascript:void(0)"><img class="tool-icon" width="35" height="35" src="tools/svg/text.svg" alt="Text">
+									 <span class="tool-name"></span></a>
+								  </li>
+								  <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/text-1.svg" /></a></li>
+							   </ul>
+							</li>
+							<li onclick="openCloseBg(event)" id="bg_active">
+							   <img src="tools/svg/background.svg" />
+							   <ul id="bg_tool">
+							   
+							   
+								   <!-- <li style="position:relative;left:3px;"><span onclick="colorchange('#FFDC00')"  class="colorPresetButton" id="bgcolor_FFDC00" style="border: 20px solid rgb(255, 220, 0);"></span>BG Color</li> -->
+							
+										
+								  
+
+								  <!-- <li ><a><input type="color" id="chooseColor1" value="#1913B0" onchange="colorchange()" style="height: 30px;width: 32px;border-radius: 20%;position: relative;"><span style="position:relative;left:9px;bottom:4px;">BG Color</span></a> </li> -->
+								  <!-- <li onclick="comingSoon()"><a href="javascript:void(0)"><img src="tools/svg/image.svg" />Image</a></li> -->
+								  <li><a href="javascript:void(0)" id="bgBtn">Background Image</a></li>
+								  <!-- <li onclick="bgImage('tools/images/002.jpg')"><a href="javascript:void(0)"><img src="tools/images/002.jpg" />sample bg 2</a></li> -->
+								  <!-- <li class="tool oneTouch" onclick="changeTool('dotted', event, 'Grid')"> -->
+									 <!-- <a href="javascript:void(0)"><img class="tool-icon" width="35" height="35" src="tools/svg/gridlines.svg" alt="Grid lines"> -->
+									 <!-- <span class="tool-name">Dotted Lines</span></a> -->
+								  <!-- </li> -->
+								  <!-- <li class="tool oneTouch" onclick="changeTool('dash', event, 'Grid', true)"> -->
+									 <!-- <a href="javascript:void(0)"><img class="tool-icon" width="35" height="35" src="tools/svg/gridlines.svg" alt="Grid lines"> -->
+									 <!-- <span class="tool-name">Grid Lines</span></a> -->
+								  <!-- </li> -->
+								  <!-- <li class="tool oneTouch" onclick="changeTool('none', event, 'Grid')"> -->
+									 <!-- <a href="javascript:void(0)"><img class="tool-icon" width="35" height="35" src="tools/svg/gridlines.svg" alt="Grid lines"> -->
+									 <!-- <span class="tool-name">Remove Grid</span></a> -->
+								  <!-- </li> -->
+							   </ul>
+							</li>
+							<li><a href="javascript:void(0)" id="bgBtn3"><img src="tools/svg/chrome.png" /></a></li>
+							<li>
+							   <a href="javascript:void(0)"><img src="tools/svg/move.svg" /></a>
+							</li>
+				
+			</ul> 	
+			
+			<ul class="nav_rght" id="rght_btm">
+			   <li id="bgBtn5"><a href="javascript:void(0)"><img src="tools/svg/user-setting.svg" />Manage Boards</a>
+<!-- 						<ul class="txt_sbl active" id="manage-boards" style="border: 2px solid #ddd;
+    height:455px;overflow: hidden scroll;display: block;bottom: 65px;box-shadow: 2px 2px 5px 2px #ddd;">
+
+						</ul> -->
+			   </li>
+			   <!-- <li onclick="comingSoon()"><a href="javascript:void(0)" style="margin-right:15px;"><img src="tools/svg/user-setting.svg" /></a></li> -->
+			</ul>
+			<ul class="nav_rght" id="rght_btm">
+			   <li>
+			   		<ul class="txt_sbl" style="height: 300px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    border: 5px solid #ddd;">
+
+			   		</ul>
+			   </li>
+			   <!-- <li onclick="comingSoon()"><a href="javascript:void(0)" style="margin-right:15px;"><img src="tools/svg/user-setting.svg" /></a></li> -->
+			</ul>
+			<ul class="nav_lft" id="lft_btm">
+			   
+			   <li class="tool" >
+			   <!-- <img class="tool-icon" width="35" height="35" src="tools/svg/ver_dots.svg" alt="tools/svg/ver_dots.svg"> -->
+			   	<span style="cursor: pointer;">
+			   		<img onClick="boardPrev()" id="boardPrev" src="tools/svg/left-arrow.png" style="width:18px">   		
+			   	</span>
+			   	<span id="board_count"></span>
+			   	<span style="cursor: pointer;">
+			   		<img onClick="boardNext()" id="boardNext" src="tools/svg/right-arrow.png" style="width:18px">
+			   	</span>
+					<span style="cursor: pointer;"><img onClick="AddPage()" src="tools/svg/plus-sign.png" style="width:25px"></span>
+			   </li>
+		
+			   
+			   <li onclick="openClosePageList()" style="margin-left:20px"><a href="javascript:void(0)"><img src="tools/svg/Pages_icon.png" style="width:25px"/></a>
+			 
+			   <ul class="txt_sbl" id="pdf-pages" style="height: 455px;overflow-y: scroll;overflow-x: hidden;">
+			   		
+			   	</ul>
+			   </li>
+			   <li class="tool" tabindex="-1" style="margin-left:20px" onclick="window.zoom=-1;changeTool('zoom',event, 'Zoom')">
+						<img class="tool-icon" style="width:22px" src="tools/svg/Zoom-out.png" alt="tools/zoom/icon.svg">
+						<span class="tool-name"></span>
+						<!-- <img class="tool-icon secondaryIcon" width="35" height="35" src="data:," alt="icon"> -->
+					</li>
+					<input type="text" placeholder="100%"onclick="window.zoom=0;changeTool('zoom',event, 'Zoom');" style="width:50px;border-radius:10px;border: none;
+    color: #000;
+    text-align: center;
+    font-weight: 400;background:#ecf5ff;padding:6px;">
+	
+			   <li class="tool" tabindex="-1" onclick="window.zoom=1;changeTool('zoom',event, 'Zoom')">
+						<img class="tool-icon" style="width:22px" src="tools/svg/Zoom-in.png" alt="tools/zoom/icon.svg">
+						<span class="tool-name"></span>
+						<!-- <img class="tool-icon secondaryIcon" width="35" height="35" src="data:," alt="icon"> -->
+					</li>
+			   
+			   
+			</ul>
+	
+		</div>	
+			
+			
+			  <ul class="tools" id="settings" style="display:none">
+				 <li class="tool" tabindex="-1" >
+					<img class="tool-icon" width="60" height="60" src="icon-size.svg" alt="size">
+					<label class="tool-name slider" for="chooseSize">
+					<span>Size</span>
+					<input type="range" id="chooseSize" min="1" max="100" step="10" class="rangeChooser">
+					</label>
+				 </li>
+				 <li class="tool" tabindex="-1">
+					<span class="tool-icon">
+					   <svg viewBox="0 0 8 8">
+						  <pattern id="opacityPattern" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+							 <rect x="0" y="0" width="2" height="2" fill="black"></rect>
+							 <rect x="2" y="2" width="2" height="2" fill="black"></rect>
+							 <rect x="2" y="0" width="2" height="2" fill="#eeeeee"></rect>
+							 <rect x="0" y="2" width="2" height="2" fill="#eeeeee"></rect>
+						  </pattern>
+							<circle cx="4" cy="4" id="opacityIndicator" r="3.5" fill="url(#opacityPattern)" opacity="1"></circle>
+					   </svg>
+					</span>
+					<label class="tool-name slider" for="chooseOpacity">
+					<span>Opacity</span>
+					<input type="range" id="chooseOpacity" value="1" min="0.2" max="1" step="0.1" class="rangeChooser">
+					</label>
+				 </li>
+			    </ul>
+
+		    </div>
+	
+		</div>
+		
+		<div id="dialog-confirm" title="New">
+  <p id="save-text"><span class="ui-icon ui-icon-alert" style="float:left; margin:5px 12px 20px 0;"></span>Do you want to save changes?</p>
+</div>
+				<div id="my_cursor"><img src="https://www.freeiconspng.com/thumbs/cursor-png/cursor-png-ico-icns-free-icon-download--icon100m-20.png" width="40px"><span id="cursor_name"></span></div>
+		<div id="bgModal" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content" style="overflow-y: scroll;">
+    <span class="close">&times;</span>
+    <span onclick="bgImage('tools/images/image1.jpg', '1')"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_1" src="tools/images/image1.jpg" /><span id="bg_delete_1"></span></a></span>
+<span onclick="bgImage('tools/images/image2.png', '2')" style="margin-left:10px;"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_2" src="tools/images/image2.png" /><span id="bg_delete_2"></span></a></span>
+
+<span onclick="bgImage('tools/images/image3.jpg', '3')" style="margin-left:10px;"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_3" src="tools/images/image3.jpg" /><span id="bg_delete_3"></span></a></span>
+<span onclick="bgImage('tools/images/image4.jpg', '4')" style="margin-left:10px;"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_4" src="tools/images/image4.jpg" /><span id="bg_delete_4"></span></a></span>
+
+<span onclick="bgImage('tools/images/image5.jpg', '5')"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_5" src="tools/images/image5.jpg" /><span id="bg_delete_5"></span></a></span>
+<span onclick="bgImage('tools/images/image6.jpg', '6')" style="margin-left:10px;"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_6" src="tools/images/image6.jpg" /><span id="bg_delete_6"></span></a></span>
+
+
+<span onclick="bgImage('tools/images/easter_bunny.svg', '7')" style="margin-left:10px;"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_7" src="tools/images/easter_bunny.svg" /><span id="bg_delete_7"></span></a></span>
+
+<span onclick="bgImage('tools/images/Halloween_story.svg', '8')" style="margin-left:10px;"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_8" src="tools/images/Halloween_story.svg" /><span id="bg_delete_8"></span></a></span>
+
+<span onclick="bgImage('tools/images/lines_bg-NSWsy_SAal_VICal.svg', '9')"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_9" src="tools/images/lines_bg-NSWsy_SAal_VICal.svg" /><span id="bg_delete_9"></span></a></span>
+
+<span onclick="bgImage('tools/images/lines_bg-QLDal_NZal_TASsy.svg', '10')" style="margin-left:10px;"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_10" src="tools/images/lines_bg-QLDal_NZal_TASsy.svg" /><span id="bg_delete_10"></span></a></span>
+
+<span onclick="bgImage('tools/images/lines_bg-QLDsy_beginner-color.svg', '11')" style="margin-left:10px;"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_11" src="tools/images/lines_bg-QLDsy_beginner-color.svg" /><span id="bg_delete_11"></span></a></span>
+
+<span onclick="bgImage('tools/images/lines_bg-QLDsy_NZsy_TASal.svg', '12')" style="margin-left:10px;"><a href="javascript:void(0)"><img class="stbgimg" id="bg_image_12" src="tools/images/lines_bg-QLDsy_NZsy_TASal.svg" /><span id="bg_delete_12"></span></a></span>
+
+  </div>
+
+</div>
+
+<div id="bgModal3" class="modal" style="width:75%;left:27%;">
+
+  <!-- Modal content -->
+  <div class="modal-content" style="overflow-y: scroll;border:3px solid #e0e0e0;border-radius:10px;">
+    <span class="close" id="closeSearch">&times;</span>
+    <br/><br/>
+    <input type="text" name="search" id="search_image" style="width: 300px;
+    padding: 4px;
+    border: 2px solid #ccc;">
+    <button onclick="searchImages()" style="background: red;color: #fff;border: none;padding: 5px 10px 5px 10px;font-size: 15px;">Search Images</button>
+	<button onclick="searchVideos()" style="background: red;color: #fff;border: none;padding: 5px 10px 5px 10px;font-size: 15px;">Search Videos</button>
+    <hr/>
+    <div id="searched_images">
+    </div>
+  </div>
+
+</div>
+<div id="bgModal4" class="modal" style="width:50%;margin-left:400px">
+
+  <!-- Modal content -->
+  <div class="modal-content" style="overflow-y: scroll;border:3px solid #e0e0e0;border-radius:10px;">
+    <span class="close" id="closeVideo">&times;</span>
+    <br/><br/>
+    <div id="open_video">
+    </div>
+  </div>
+
+</div>
+
+
+<div id="bgModal5" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content" style="overflow-y: scroll;border:3px solid #e0e0e0;border-radius:10px;width: 75%;">
+    <span class="close" id="close-manage-boards">&times;</span>
+    <br/><h2>Manage Boards</h2><br/>
+    <div id="manage_boards">
+    </div>
+  </div>
+
+</div>
+
+
+<div id="bgModal6" class="modal" style="margin-left: 25px;width: 80%;">
+
+  <!-- Modal content -->
+  <div class="modal-content" style="overflow-y: scroll;border:3px solid #e0e0e0;border-radius:10px;padding:0px;">
+    <span class="close" id="close-manage-magic">&times;</span>
+    <br/><br/>
+			<div id="canvasContainer" style="margin-top: -38px;border-right: 5px solid #ddd;border-bottom: 5px solid #ddd;">
+			    <canvas id="canvas1" width="800" height="540">
+			        This text is displayed if your browser does not support HTML5 Canvas.
+			    </canvas>
+			    <canvas id="canvas2" width="800" height="540">
+			        This text is displayed if your browser does not support HTML5 Canvas.
+			    </canvas>
+			    <canvas id="canvas3" width="800" height="540">
+			        This text is displayed if your browser does not support HTML5 Canvas.
+			    </canvas><br/>
+			    <div id="buttons">
+        			<div id="suggestions"></div>
+			    </div>
+			</div>
+	    <div>
+        <input type="button" id="clear" value="Clear" style="font-size: 20px;padding: 5px;">
+        <input type="button" id="reset" value="Reset" style="font-size: 20px;padding: 5px;">
+	    </div>
+  </div>
+
+</div>
+
+
+
+	
+
+  <!-- Modal content -->
+  <div class="maintimer" id="draggable5" style="display:none;">
+    <a href="javascript:void(0)" onClick ="closetimer()"><span class="close" style="position: relative;
+    bottom: 20px;
+    left: 3px;" >&times;</span></a>
+    <div style="width:100%">
+			<form action="#" method="post">
+			Minutes: <input type="text" id="mns" name="mns" value="0" size="3" style="border-radius: 5px;
+    border: 3px solid #ccc;" maxlength="3" />&nbsp; Seconds: <input type="text" id="scs" name="scs" value="0" style="border-radius: 5px;
+    border: 3px solid #ccc;" size="3" maxlength="2" /><br/>
+			<div style="margin-top:4px;">
+			<input type="button" id="btnct" class="timecs" value="START" /> 
+			<input type="button" id="btnct_res" class="timecs" value="RESTART" /> 
+			<input type="button" id="btnct_end" class="timecs" value="END" />
+			<span style="font-size:26px;font-weight:bold;position:relative;left:3px;top:3px;"><span id="showmns">00</span>:<span id="showscs">00</span></span>
+			</div>
+			</form>
+				
+
+    </div>
+
+  </div>
+
+	<div class="maincalc" id="qr_code" style="display: none;margin-top: -45PX;width: 435px;margin-left: -60px;">
+		<h2>QR Image</h2>
+		<div id="qrcode-container">
+    	<canvas id="qrcode" class="qrcode" onclick="qrZoom()"></canvas>
+  	</div>
+  	<span id="qr_url" style="font-size:20px"></span>
+		<input type="button" class="qr_close" value="Close" onClick ="closeQR()" style="float: right;margin: 10px 23px 0px 10px;background: #ddd;color: #000;padding: 4px 14px;border: red;border-radius: 7px;font-size: 18px;" />
+	</div>
+
+		<div id="qr_zoomed" style="display: none;">
+		<h2>QR Image</h2>
+		<div id="qrcode-container">
+    	<canvas id="qrcode_zoom" class="qrcode"></canvas>
+  	</div>
+		<input type="button" class="qr_close" value="Close" onClick ="closeZoomQR()" style="float: right;margin: 10px 23px 10px 10px;background: #ddd;color: #000;padding: 4px 14px;border: red;border-radius: 7px;font-size: 18px;" />
+	</div>
+
+<div class="maincalc" id="draggable" style="display:none;">
+		<form name="form" id="calcreset">
+		<div class="display">
+			<input type="text" class="calctxt" placeholder="0" name="displayResult" />
+		</div>
+			<div class="buttons">
+			  <div class="row">
+				<input type="button" class="calcbtn" name="b7" value="7" onClick="calcNumbers(b7.value)">
+				  <input type="button" class="calcbtn" name="b8" value="8" onClick="calcNumbers(b8.value)">
+				  <input type="button" class="calcbtn" name="b9" value="9" onClick="calcNumbers(b9.value)">
+				  <input type="button" class="calcbtn" name="addb" value="+" onClick="calcNumbers(addb.value)">
+				</div>
+				
+				<div class="row">
+				<input type="button" class="calcbtn" name="b4" value="4" onClick="calcNumbers(b4.value)">
+				  <input type="button" class="calcbtn" name="b5" value="5" onClick="calcNumbers(b5.value)">
+				  <input type="button" class="calcbtn" name="b6" value="6" onClick="calcNumbers(b6.value)">
+				  <input type="button" class="calcbtn" name="subb" value="-" onClick="calcNumbers(subb.value)">
+				</div>
+				
+				<div class="row">
+				<input type="button" class="calcbtn" name="b1" value="1" onClick="calcNumbers(b1.value)">
+				  <input type="button" class="calcbtn" name="b2" value="2" onClick="calcNumbers(b2.value)">
+				  <input type="button" class="calcbtn" name="b3" value="3" onClick="calcNumbers(b3.value)">
+				  <input type="button" class="calcbtn" name="mulb" value="*" onClick="calcNumbers(mulb.value)">
+				</div>
+				
+				<div class="row">
+				<input type="button" class="calcbtn" name="b0" value="0" onClick="calcNumbers(b0.value)">
+				  <input type="button" class="calcbtn" name="potb" value="." onClick="calcNumbers(potb.value)">
+				  <input type="button" class="calcbtn" name="divb" value="/" onClick="calcNumbers(divb.value)">
+				  <input type="button" class="calcbtn" class="red" value="=" onClick="displayResult.value=eval(displayResult.value)">
+				</div>
+			</div>
+		<input type="button" class="calcreset" value="Reset" onClick ="fun()"/>
+		<input type="button" class="calcreset1" value="Close" onClick ="closeCal()"/>
+		</form>
+	</div>
+<script>
+		$('#marker_tools').addClass('inactive').removeClass('active').hide()
+		$('#delete_tool').addClass('inactive').removeClass('active').hide()
+		$('#text_tool').addClass('inactive').removeClass('active').hide()
+		$('#bg_tool').addClass('inactive').removeClass('active').hide()
+		$('#pdf-pages').addClass('inactive').removeClass('active').hide()
+		$('#object_tools').addClass('inactive').removeClass('active').hide()
+		$('#download_tools').addClass('inactive').removeClass('active').hide()
+		$('#upload_tools').addClass('inactive').removeClass('active').hide()
+		$('#math_tools').addClass('inactive').removeClass('active').hide()
+		$('#math_obj_tools').addClass('inactive').removeClass('active').hide()
+		$('#manage-boards').addClass('inactive').removeClass('active').hide()
+// Get the modal
+var modal = document.getElementById("myModal");
+
+// Get the button that opens the modal
+var btn = document.getElementById("myBtn");
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("close")[0];
+
+// When the user clicks the button, open the modal 
+btn.onclick = function() {
+  modal.style.display = "block";
+// $('#math_tools').css('visibility', 'hidden')
+// $('#math_tools').hide()
+}
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+  modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+//window.onclick = function(event) {
+  //if (event.target == modal) {
+    //modal.style.display = "none";
+  //}
+//}
+
+function closeCal() {
+	document.getElementById('draggable').style.display = 'none';
+}
+function closetimer() {
+	document.getElementById('draggable5').style.display = 'none';
+}
+
+function closeQR() {
+	document.getElementById('qr_code').style.display = 'none'
+}
+
+</script>
+  <script type="text/javascript">
+    function generateQRCode() {
+		document.getElementById('qr_code').style.display = 'block'
+        let qrcodeContainer = document.getElementById("qrcode");
+        qrcodeContainer.innerHTML = "";
+        new QRious({
+          element: qrcodeContainer,
+          value: window.location.href,
+          background: '#ffffff',
+          backgroundAlpha: 1,
+          foreground: '#5868bf',
+          foregroundAlpha: 1,
+          level: 'H',
+          padding: 0,
+          size: 100,
+        });
+        document.getElementById("qr_url").innerHTML = `<a href="${window.location.href}">${window.location.href}</a>`;
+        document.getElementById("qrcode-container").style.display = "block";
+    }
+    function closeZoomQR() {
+			document.getElementById('qr_zoomed').style.display = 'none'    	
+    }
+    function qrZoom() {
+		document.getElementById('qr_zoomed').style.display = 'block'
+        let qrcodeContainer = document.getElementById("qrcode_zoom");
+        qrcodeContainer.innerHTML = "";
+        new QRious({
+          element: qrcodeContainer,
+          value: window.location.href,
+          background: '#ffffff',
+          backgroundAlpha: 1,
+          foreground: '#5868bf',
+          foregroundAlpha: 1,
+          level: 'H',
+          padding: 0,
+          size: 500,
+        });    	
+    }
+  </script>
+<script>
+// Get the modal
+var modal1 = document.getElementById("bgModal");
+
+// Get the button that opens the modal
+var btn1 = document.getElementById("bgBtn");
+
+// Get the <span> element that closes the modal
+var span1 = document.getElementsByClassName("close")[1];
+
+// When the user clicks the button, open the modal 
+btn1.onclick = function() {
+  modal1.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the modal
+span1.onclick = function() {
+  modal1.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+//window.onclick = function(event) {
+ // if (event.target == modal1) {
+   // modal1.style.display = "none";
+  //}
+//}
+</script>
+
+<script>
+// Get the modal
+var modal2 = document.getElementById("bgModal2");
+
+// Get the button that opens the modal
+var btn2 = document.getElementById("bgBtn2");
+
+// Get the <span> element that closes the modal
+var span2 = document.getElementsByClassName("close")[2];
+
+// When the user clicks the button, open the modal 
+btn2.onclick = function() {
+  modal2.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the modal
+span2.onclick = function() {
+  modal2.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+//window.onclick = function(event) {
+  //if (event.target == modal2) {
+  //  modal2.style.display = "none";
+  //}
+//}
+</script>
+
+<script>
+// Get the modal
+var modal3 = document.getElementById("bgModal3");
+
+// Get the button that opens the modal
+var btn3 = document.getElementById("bgBtn3");
+
+// Get the <span> element that closes the modal
+var span3 = document.getElementById("closeSearch");
+
+// When the user clicks the button, open the modal 
+btn3.onclick = function() {
+  modal3.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the modal
+span3.onclick = function() {
+  modal3.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+//window.onclick = function(event) {
+ // if (event.target == modal1) {
+   // modal1.style.display = "none";
+  //}
+//}
+</script>
+<script>
+// Get the modal
+var modal4 = document.getElementById("bgModal4");
+
+// Get the button that opens the modal
+// var btn4 = document.getElementById("bgBtn4");
+
+// Get the <span> element that closes the modal
+var span4 = document.getElementById("closeVideo");
+
+// When the user clicks the button, open the modal 
+// btn4.onclick = function() {
+//   modal4.style.display = "block";
+// }
+
+// When the user clicks on <span> (x), close the modal
+span4.onclick = function() {
+  modal4.style.display = "none";
+}
+</script>
+<script>
+// Get the modal
+var modal5 = document.getElementById("bgModal5");
+
+// Get the button that opens the modal
+var btn5 = document.getElementById("bgBtn5");
+
+// Get the <span> element that closes the modal
+var span5 = document.getElementById("close-manage-boards");
+
+// When the user clicks the button, open the modal 
+btn5.onclick = function() {
+  modal5.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the modal
+span5.onclick = function() {
+  modal5.style.display = "none";
+}
+</script>
+<script>
+// Get the modal
+var modal6 = document.getElementById("bgModal6");
+
+// Get the button that opens the modal
+var btn6 = document.getElementById("bgBtn6");
+var btn7 = document.getElementById("bgBtn7");
+// Get the <span> element that closes the modal
+var span6 = document.getElementById("close-manage-magic");
+
+// When the user clicks the button, open the modal 
+btn6.onclick = function() {
+	window.type = "magic"
+	var canvas = document.getElementById("canvas1");
+	var canvas2 = document.getElementById("canvas2");
+	var canvas3 = document.getElementById("canvas3");
+	var sgs = document.getElementById('suggestions');
+	var ctx = canvas.getContext("2d");
+	var ctx2 = canvas2.getContext("2d");
+	var ctx3 = canvas3.getContext("2d");
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	ctx2.clearRect(0, 0, canvas.width, canvas.height);
+	ctx3.clearRect(0, 0, canvas.width, canvas.height);
+	// inkArray.length = 0;
+	sgs.innerHTML = "";
+	sgsComplete = 1;
+  modal6.style.display = "block";
+}
+btn7.onclick = function() {
+	window.type = "handwrite";
+	var canvas = document.getElementById("canvas1");
+	var canvas2 = document.getElementById("canvas2");
+	var canvas3 = document.getElementById("canvas3");
+	var sgs = document.getElementById('suggestions');
+	var ctx = canvas.getContext("2d");
+	var ctx2 = canvas2.getContext("2d");
+	var ctx3 = canvas3.getContext("2d");
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	ctx2.clearRect(0, 0, canvas.width, canvas.height);
+	ctx3.clearRect(0, 0, canvas.width, canvas.height);
+	// inkArray.length = 0;
+	sgs.innerHTML = "";
+	sgsComplete = 1;
+  modal6.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the modal
+span6.onclick = function() {
+  modal6.style.display = "none";
+}
+</script>
+<script type="text/javascript">
+
+var mydiv = document.getElementById("canvas");
+if (mydiv.addEventListener) {
+	// IE9, Chrome, Safari, Opera
+	mydiv.addEventListener("mousewheel", MouseWheelHandler, false);
+	// Firefox
+	mydiv.addEventListener("DOMMouseScroll", MouseWheelHandler, false);
+}
+// IE 6/7/8
+else mydiv.attachEvent("onmousewheel", MouseWheelHandler);
+
+
+function comingSoon() {
+	alert(`Currently selected tool was not available, Coming Soon ..!!`)
+}
+function MouseWheelHandler(e) {
+
+	// cross-browser wheel delta
+	var e = window.event || e; // old IE support
+	var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+    
+    if(delta==1)
+    {
+       e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+    if(delta==-1)
+    {
+       e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+	return false;
+}
+
+</script>
+<script>
+// <![CDATA[
+function CountdownTimer(obnm){
+ // https://coursesweb.net/javascript/
+  var endct =0;  // it is set to 1 when script starts
+  var ctmnts =0;  // minutes
+  var ctsecs =0;  // seconds
+  var startchr =0;  // used to control when to read data from form, and script finished
+  var ctpause =-1;  //if -1, pause the script
+
+  //get html elms.
+  var el_showmns = document.getElementById('showmns');
+  var el_showscs = document.getElementById('showscs');
+  var el_mns = document.getElementById('mns');
+  var el_scs = document.getElementById('scs');
+  var el_btnct = document.getElementById('btnct');
+  var el_btnct_res = document.getElementById('btnct_res');
+  var el_btnct_end = document.getElementById('btnct_end');
+
+  //to start/pause/resume Countdown Timer
+  function startPauseCT(){
+    if(parseInt(el_mns.value) >0 || parseInt(el_scs.value)>0 || endct ==1){
+      ctpause *=-1;
+      if(ctpause ==1){ //Start and set next click as Pause
+        el_btnct.value ='PAUSE';
+        window[obnm].countdownTimer();
+      }
+      else el_btnct.value ='RESUME';
+    }
+  }
+
+  // HERE YOU CAN ADD TO EXECUTE JavaScript instructions WHEN COUNTDOWN TIMER REACHES TO 0
+  function endCT(){
+    // HERE ADD YOUR CODE
+
+    return false;
+  }
+
+  this.countdownTimer = function(){
+    // if $startchr is 0, and form fields exists, gets data for minutes and seconds, and sets $startchr to 1
+    if(startchr == 0 && el_mns && el_scs) {
+      // makes sure the script uses integer numbers
+      ctmnts = parseInt(el_mns.value);
+      ctsecs = parseInt(el_scs.value);
+
+      // if data not a number, sets the value to 0
+      if(isNaN(ctmnts)) ctmnts = 0;
+      if(isNaN(ctsecs)) ctsecs = 0;
+
+      // rewrite data in form fields to be sure that the fields for minutes and seconds contain integer number
+      el_mns.value = ctmnts;
+      el_scs.value = ctsecs;
+      startchr = 1;
+    }
+
+    if(ctmnts >0 || ctsecs >0) endct =1;  //to can call endCT() at the ending
+
+    // if minutes and seconds are 0, call endCT()
+    if(ctmnts==0 && ctsecs==0 && endct ==1){
+      startchr =0;
+      ctpause =-1;
+      endct =0;
+      el_btnct.value ='START';
+      endCT();
+    }
+    else if(startchr ==1 && ctpause ==1){
+      // decrease seconds, and decrease minutes if seconds reach to 0
+      ctsecs--;
+      if(ctsecs < 0){
+        if(ctmnts > 0) {
+          ctsecs = 59;
+          ctmnts--;
+        }
+        else {
+          ctsecs = 0;
+          ctmnts = 0;
+        }
+      }
+      setTimeout(obnm +'.countdownTimer()', 1000); //auto-calls this function after 1 seccond
+    }
+
+    // display the time in page
+    el_showmns.innerHTML = ctmnts;
+    el_showscs.innerHTML = ctsecs;
+  }
+
+  //set event to button that starts the Countdown Timer
+  if(el_btnct) el_btnct.addEventListener('click', startPauseCT);
+
+  //restart Countdown Timer from the initial values
+  if(el_btnct_res) el_btnct_res.addEventListener('click', function(){ startchr =0; if(ctpause ==-1) startPauseCT(); });
+
+  //ending Countdown Timer, sets 0 form data
+  if(el_btnct_end) el_btnct_end.addEventListener('click', function(){ el_mns.value =0; el_scs.value =0; startchr =0; startPauseCT(); });
+}
+
+//set object of CountdownTimer class
+var obCT = new CountdownTimer('obCT');
+
+var profileData = JSON.parse(localStorage.getItem('profile'));
+var obj = profileData.data.user.school[0];
+if(obj.isGoogleDriveEnable) {
+	$('#gdrive').show()
+}else{
+	$('#gdrive').hide()
+}
+if(obj.isHandWritingEnable) {
+	$('#handwriting').show()
+}else{
+	$('#handwriting').hide()
+}
+if(obj.isOneDriveEnable) {
+	$('#onedrive').show()
+}else{
+	$('#onedrive').hide()
+}
+if(obj.isMagicDrawEnable) {
+	$('#magic').show()
+}else{
+	$('#magic').hide()
+}
+if(obj.isPhetEnable) {
+	$('#phet').show()
+}else{
+	$('#phet').hide()
+}
+if(obj.username) {
+	$('#username').html(obj.username)
+}else{
+	$('#username').hide('')
+}
+</script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+	<script type="text/javascript" src="https://js.live.net/v7.2/OneDrive.js"></script>
+	<script type="application/json" id="translations">{{{ json translations }}}</script>
+	<script type="application/json" id="configuration">{{{ json configuration }}}</script>
+  <script type='text/javascript' src='../js/stencils.js'></script>	
+	<!-- <script src="../js/handwriting.canvas.js"></script> -->
+	<script src="../js/path-data-polyfill.js"></script>
+	<script src="../js/minitpl.js"></script>
+	<script src="../js/intersect.js"></script>
+	<script src="../js/2D.js"></script>
+	<script src="../js/Init2D.js"></script>
+	<script src="../js/board.js"></script>
+	<script src="../tools/pencil/wbo_pencil_point.js"></script>
+	<script src="../tools/new/new.js"></script>
+	<script src="../tools/pencil/pencil.js"></script>
+	<script src="../tools/cursor/cursor.js"></script>
+	<script src="../tools/line/line.js"></script>
+	<script src="../tools/rect/rect.js"></script>
+	<script src="../tools/ellipse/ellipse.js"></script>
+	<script src="../tools/text/text.js"></script>
+	<script src="../tools/eraser/eraser.js"></script>
+	<script src="../tools/eraser2/eraser2.js"></script>
+	<script src="../tools/hand/hand.js"></script>
+	<script src="../tools/grid/grid.js"></script>
+	<script src="../tools/download/download.js"></script>
+	<script src="../tools/zoom/zoom.js"></script>
+	<script src="../tools/document/document.js"></script>
+	<script src="../tools/document/pdf.js"></script>
+	<script src="../tools/document/pdf.worker.js"></script>		
+	<script src="../tools/undo/undo.js"></script>
+	<script src="../tools/redo/redo.js"></script>
+<!-- 	<script src="../tools/zoom-in/zoom-in.js"></script>
+	<script src="../tools/zoom-out/zoom-out.js"></script> -->
+	<script src="../js/canvascolor.js"></script>
+	<script src="../components/measurement/measurement.js"></script>
+	<script src="../tools/transform/transform.js"></script>
+	<script src="../js/helpers.js"></script>
+	<script type='text/javascript' src='../js/script.js'></script>
+	<script type="text/javascript">
+		localStorage.setItem('tool','hand')
+		changeTool('hand', '', 'Hand')
+		  // bgImage(window.bgimage, window.bgId)
+		var options = {
+		    width : 800,         //int, width of the writing area, default: undefined
+		    height : 800,        //int, height of the writing area, default: undefined
+		    language : "en",  //string, language of input trace, default: "zh_TW"
+		    numOfWords : 1,      //int, number of words of input trace, default: undefined
+		    numOfReturn : 5,     //int, number of maximum returned results, default: undefined
+		};
+		var callback = function(result, err){
+		    if(err) throw err;
+		    else console.log(result);	
+		};
+
+	</script>
+	 <div class="overlay"></div>
+</body>
+
+</html>

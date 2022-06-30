@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512.5" viewBox="0 0 512 512.5">
+  <g id="_4box" data-name="4box" transform="translate(5062 -10587)">
+    <g id="Rectangle_round_corner" data-name="Rectangle round corner" transform="translate(-5062 10587)" fill="none" stroke="#4ba2f9" stroke-width="30">
+      <rect width="512" height="512" rx="50" stroke="none"/>
+      <rect x="15" y="15" width="482" height="482" rx="35" fill="none"/>
+    </g>
+    <line id="Line_56" data-name="Line 56" y2="512" transform="translate(-4805.5 10587.5)" fill="none" stroke="#4ba2f9" stroke-width="30"/>
+    <line id="Line_57" data-name="Line 57" y2="512" transform="translate(-4550 10843) rotate(90)" fill="none" stroke="#4ba2f9" stroke-width="30"/>
+  </g>
+</svg>

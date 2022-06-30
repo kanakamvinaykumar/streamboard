@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="6.75" height="33" viewBox="0 0 6.75 33">
+  <g id="ver_dots" transform="translate(-15 -4.5)">
+    <path id="Path_16" data-name="Path 16" d="M20.25,18.375A1.875,1.875,0,1,1,18.375,16.5,1.875,1.875,0,0,1,20.25,18.375Z" transform="translate(0 2.625)" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+    <path id="Path_17" data-name="Path 17" d="M20.25,7.875A1.875,1.875,0,1,1,18.375,6,1.875,1.875,0,0,1,20.25,7.875Z" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+    <path id="Path_18" data-name="Path 18" d="M20.25,28.875A1.875,1.875,0,1,1,18.375,27,1.875,1.875,0,0,1,20.25,28.875Z" transform="translate(0 5.25)" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  </g>
+</svg>
